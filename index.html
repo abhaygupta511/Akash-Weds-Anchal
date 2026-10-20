@@ -62,7 +62,7 @@ footer{background:#280a12;color:#d8b36c;padding:28px 7%;display:flex;justify-con
 
 </main><footer><span class="footer-brand">Akash & Anchal</span><span>25 NOVEMBER 2026 · BUXAR, BIHAR</span><span>MADE WITH LOVE</span></footer>
 </div>
-<audio id="weddingMusic" src="music.mp3" preload="auto" autoplay loop></audio>
+<audio id="weddingMusic" src="./music.mp3" preload="metadata" loop playsinline></audio>
 <script>
 (function(){
 const loader=document.getElementById('loader'),welcome=document.getElementById('welcome'),site=document.getElementById('site');
@@ -75,7 +75,58 @@ let music=false;function setLanguage(lang){const t=translations[lang];document.d
 document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLanguage(b.dataset.lang)));setLanguage('en');
 function countdown(){const target=new Date(2026,10,25,0,0,0).getTime(),diff=target-Date.now();const ids=['days','hours','minutes','seconds'];if(diff<=0){ids.forEach(id=>document.getElementById(id).textContent='00');return}const vals=[Math.floor(diff/86400000),Math.floor(diff%86400000/3600000),Math.floor(diff%3600000/60000),Math.floor(diff%60000/1000)];ids.forEach((id,i)=>document.getElementById(id).textContent=String(vals[i]).padStart(2,'0'))}countdown();window.setInterval(countdown,1000);
 const navlinks=document.getElementById('navlinks'),menuBtn=document.getElementById('menuBtn');menuBtn.addEventListener('click',function(){navlinks.classList.toggle('open');menuBtn.textContent=navlinks.classList.contains('open')?'✕':'☰'});navlinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{navlinks.classList.remove('open');menuBtn.textContent='☰'}));
-const weddingMusic=document.getElementById('weddingMusic');let fadeFrame=0;const musicBtn=document.getElementById('musicBtn'),musicText=document.getElementById('musicText');weddingMusic.volume=0;musicText.textContent='Tap for music';const startMusic=()=>{if(fadeFrame)cancelAnimationFrame(fadeFrame);weddingMusic.volume=0;weddingMusic.play().then(()=>{music=true;musicText.textContent=translations[document.documentElement.lang].musicOn;const started=performance.now(),duration=2200;const fade=now=>{const p=Math.min(1,(now-started)/duration);weddingMusic.volume=Math.min(1,p*0.72);if(p<1)fadeFrame=requestAnimationFrame(fade);else fadeFrame=0};fadeFrame=requestAnimationFrame(fade)}).catch(()=>{music=false;musicText.textContent=translations[document.documentElement.lang].musicTap})};musicBtn.addEventListener('click',function(){if(music){if(fadeFrame)cancelAnimationFrame(fadeFrame);weddingMusic.pause();music=false;musicText.textContent=translations[document.documentElement.lang].musicOff}else startMusic()});
+const weddingMusic=document.getElementById('weddingMusic');
+const musicBtn=document.getElementById('musicBtn');
+const musicText=document.getElementById('musicText');
+let music=false, fadeFrame=0, fadeToken=0;
+const getMusicLabel=(key)=>{const lang=document.documentElement.lang==='hi'?'hi':'en';return translations[lang][key]||key};
+function stopFade(){if(fadeFrame){cancelAnimationFrame(fadeFrame);fadeFrame=0}fadeToken++}
+function startMusic(){
+  stopFade();
+  // Start playback directly from the user's click, as browsers block autoplay.
+  weddingMusic.volume=0.72;
+  const playPromise=weddingMusic.play();
+  if(playPromise&&typeof playPromise.then==='function'){
+    playPromise.then(()=>{
+      music=true;
+      musicBtn.setAttribute('aria-pressed','true');
+      musicText.textContent=getMusicLabel('musicOn');
+      const token=fadeToken;
+      weddingMusic.volume=0;
+      const startedAt=performance.now(),duration=1800;
+      const fade=(now)=>{
+        if(token!==fadeToken||weddingMusic.paused)return;
+        const progress=Math.min(1,(now-startedAt)/duration);
+        weddingMusic.volume=0.72*progress;
+        if(progress<1)fadeFrame=requestAnimationFrame(fade);else fadeFrame=0;
+      };
+      fadeFrame=requestAnimationFrame(fade);
+    }).catch((error)=>{
+      music=false;
+      musicBtn.setAttribute('aria-pressed','false');
+      musicText.textContent=getMusicLabel('musicTap');
+      console.warn('Wedding music could not start. Check that music.mp3 exists and loads.',error);
+    });
+  }
+}
+function stopMusic(){
+  stopFade();
+  weddingMusic.pause();
+  weddingMusic.volume=0;
+  music=false;
+  musicBtn.setAttribute('aria-pressed','false');
+  musicText.textContent=getMusicLabel('musicOff');
+}
+weddingMusic.addEventListener('ended',()=>{if(!weddingMusic.loop)stopMusic()});
+weddingMusic.addEventListener('error',()=>{
+  music=false;
+  musicBtn.setAttribute('aria-pressed','false');
+  musicText.textContent='Music file unavailable';
+  console.error('Could not load ./music.mp3. Confirm the filename and repository path.');
+});
+musicBtn.setAttribute('aria-pressed','false');
+musicText.textContent=getMusicLabel('musicOff');
+musicBtn.addEventListener('click',()=>{if(!weddingMusic.paused&&!weddingMusic.ended)stopMusic();else startMusic()});
 
 })();
 </script>
