@@ -62,7 +62,7 @@ footer{background:#280a12;color:#d8b36c;padding:28px 7%;display:flex;justify-con
 
 </main><footer><span class="footer-brand">Akash & Anchal</span><span>25 NOVEMBER 2026 · BUXAR, BIHAR</span><span>MADE WITH LOVE</span></footer>
 </div>
-<audio id="weddingMusic" src="./music.mp3" preload="metadata" loop playsinline></audio>
+<audio id="weddingMusic" src="./music.mp3?v=2" preload="auto" loop playsinline></audio>
 <script>
 (function(){
 const loader=document.getElementById('loader'),welcome=document.getElementById('welcome'),site=document.getElementById('site');
@@ -78,54 +78,37 @@ const navlinks=document.getElementById('navlinks'),menuBtn=document.getElementBy
 const weddingMusic=document.getElementById('weddingMusic');
 const musicBtn=document.getElementById('musicBtn');
 const musicText=document.getElementById('musicText');
-let music=false, fadeFrame=0, fadeToken=0;
-const getMusicLabel=(key)=>{const lang=document.documentElement.lang==='hi'?'hi':'en';return translations[lang][key]||key};
-function stopFade(){if(fadeFrame){cancelAnimationFrame(fadeFrame);fadeFrame=0}fadeToken++}
-function startMusic(){
-  stopFade();
-  // Start playback directly from the user's click, as browsers block autoplay.
-  weddingMusic.volume=0.72;
-  const playPromise=weddingMusic.play();
-  if(playPromise&&typeof playPromise.then==='function'){
-    playPromise.then(()=>{
-      music=true;
-      musicBtn.setAttribute('aria-pressed','true');
-      musicText.textContent=getMusicLabel('musicOn');
-      const token=fadeToken;
-      weddingMusic.volume=0;
-      const startedAt=performance.now(),duration=1800;
-      const fade=(now)=>{
-        if(token!==fadeToken||weddingMusic.paused)return;
-        const progress=Math.min(1,(now-startedAt)/duration);
-        weddingMusic.volume=0.72*progress;
-        if(progress<1)fadeFrame=requestAnimationFrame(fade);else fadeFrame=0;
-      };
-      fadeFrame=requestAnimationFrame(fade);
-    }).catch((error)=>{
-      music=false;
-      musicBtn.setAttribute('aria-pressed','false');
-      musicText.textContent=getMusicLabel('musicTap');
-      console.warn('Wedding music could not start. Check that music.mp3 exists and loads.',error);
-    });
+let music=false;
+const musicLabel=(key)=>{const lang=document.documentElement.lang==='hi'?'hi':'en';return (translations[lang]&&translations[lang][key])||key};
+function setMusicUI(isPlaying,label){
+  music=isPlaying;
+  musicBtn.setAttribute('aria-pressed',String(isPlaying));
+  musicText.textContent=label||musicLabel(isPlaying?'musicOn':'musicOff');
+}
+async function startMusic(){
+  // Playback is requested directly inside the invitation/music button click.
+  try{
+    weddingMusic.volume=0.8;
+    if(weddingMusic.readyState===0) weddingMusic.load();
+    await weddingMusic.play();
+    setMusicUI(true);
+  }catch(error){
+    setMusicUI(false,musicLabel('musicTap'));
+    console.error('Wedding music did not play:',error,'Audio source:',weddingMusic.currentSrc);
   }
 }
 function stopMusic(){
-  stopFade();
   weddingMusic.pause();
-  weddingMusic.volume=0;
-  music=false;
-  musicBtn.setAttribute('aria-pressed','false');
-  musicText.textContent=getMusicLabel('musicOff');
+  setMusicUI(false);
 }
-weddingMusic.addEventListener('ended',()=>{if(!weddingMusic.loop)stopMusic()});
+weddingMusic.addEventListener('playing',()=>setMusicUI(true));
+weddingMusic.addEventListener('pause',()=>{if(weddingMusic.currentTime>0)setMusicUI(false)});
 weddingMusic.addEventListener('error',()=>{
-  music=false;
-  musicBtn.setAttribute('aria-pressed','false');
-  musicText.textContent='Music file unavailable';
-  console.error('Could not load ./music.mp3. Confirm the filename and repository path.');
+  setMusicUI(false,'Music file unavailable');
+  console.error('Wedding music file failed to load. Check that music.mp3 is a valid playable MP3 in the published site root.',weddingMusic.error);
 });
 musicBtn.setAttribute('aria-pressed','false');
-musicText.textContent=getMusicLabel('musicOff');
+musicText.textContent=musicLabel('musicOff');
 musicBtn.addEventListener('click',()=>{if(!weddingMusic.paused&&!weddingMusic.ended)stopMusic();else startMusic()});
 
 })();
