@@ -36,6 +36,15 @@ footer{background:#260911;color:var(--gold);padding:25px 7%;display:flex;justify
   <img class="ganesha" src="./ganesh-ji.png" alt="Golden Lord Ganesha" onerror="this.style.display='none'">
   <p class="mantra">॥ श्री गणेशाय नमः ॥</p><p class="loader-caption">A blessed beginning</p><div class="loadline"><span></span></div>
 </div>
+<script>
+/* Independent failsafe: never leave visitors trapped on the loading screen. */
+window.setTimeout(function () {
+  var loader = document.getElementById('loader');
+  var welcome = document.getElementById('welcome');
+  if (loader) loader.classList.add('done');
+  if (welcome) { welcome.classList.add('show'); welcome.setAttribute('aria-hidden','false'); }
+}, 2600);
+</script>
 <section class="welcome" id="welcome" aria-hidden="true">
   <div class="language" aria-label="Choose language"><button type="button" data-language="en" class="active">EN</button><button type="button" data-language="hi">हिंदी</button></div>
   <div class="sparkle">✦</div><p class="eyebrow" data-i18n="welcomeEyebrow">WITH THE BLESSINGS OF OUR FAMILIES</p>
