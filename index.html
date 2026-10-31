@@ -148,7 +148,6 @@ window.setTimeout(function () {
     } catch (err) {
       musicBtn.setAttribute('aria-pressed','false');
       updateMusicLabel(copy[language].musicTap);
-      console.error('Wedding music could not play. Check the published ./music.mp3 file and browser console.', err);
     }
   }
   function pauseMusic() {
@@ -158,14 +157,13 @@ window.setTimeout(function () {
   }
   openBtn.addEventListener('click', async () => {
     welcome.classList.add('hide'); site.classList.add('ready'); site.setAttribute('aria-hidden','false'); welcome.setAttribute('aria-hidden','true'); document.body.classList.remove('locked');
-    // This click is a user gesture, so the browser may allow music playback.
     await playMusic();
     window.setTimeout(() => { welcome.style.display='none'; }, 750);
   });
   musicBtn.addEventListener('click', () => audio.paused ? playMusic() : pauseMusic());
   audio.addEventListener('playing', () => { musicBtn.setAttribute('aria-pressed','true'); updateMusicLabel(); });
   audio.addEventListener('pause', () => { musicBtn.setAttribute('aria-pressed','false'); updateMusicLabel(); });
-  audio.addEventListener('error', () => { updateMusicLabel(copy[language].musicError); console.error('Audio load error:', audio.error); });
+  audio.addEventListener('error', () => { updateMusicLabel(copy[language].musicError); });
   menuBtn.addEventListener('click', () => { const open = navlinks.classList.toggle('open'); menuBtn.textContent = open ? '✕' : '☰'; menuBtn.setAttribute('aria-expanded',String(open)); });
   $$('#navlinks a').forEach(a => a.addEventListener('click', () => { navlinks.classList.remove('open'); menuBtn.textContent='☰'; menuBtn.setAttribute('aria-expanded','false'); }));
   function countdown() {
